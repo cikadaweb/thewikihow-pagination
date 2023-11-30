@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- Подключение стилей DataTables и Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="./styles.css" rel="stylesheet" type="text/css"></link>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Пример DataTables</h1>
+        <table id="dataTable" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Возраст</th>
+                    <th>Город</th>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Возраст</th>
+                    <th>Город</th>
+                    <th>Город</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Здесь будут данные -->
+            </tbody>
+        </table>
+
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                <li class="page-item mx-1">
+                    <button class="btn page-link" tabindex="-1">Предыдущий</button>
+                </li>
+                <div id="customPagination" class="d-flex text-center mx-1">
+                    <!-- Кастомные элементы пагинации будут здесь -->
+                </div>
+                <li class="page-item mx-1">
+                    <button class="btn page-link" tabindex="-1">Следующий</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap4.min.js"></script>
+<script>
+
+    $(document).ready(function() {
+        let limit = 5; // Количество записей на странице
+        let offset = 0; // Индекс элемента начала поиска
+        let currentPage = 1; // Текущая активная страница
+        let data = []; // Данные для таблицы
+        let totalPages = 0; // Общее количество страниц
+
+        const table = $('#dataTable').DataTable({
+            columns: [
+                { data: 'id' },
+                { data: 'subject' },
+                { data: 'category' },
+                { data: 'type' },
+                { data: 'severity' },
+                { data: 'status' },
+                { data: 'responsible' },
+                { data: 'date' },
+                { data: 'updated_date' },
+                
+            ],
+            lengthChange: false,
+            pageLength: limit,
+            paging: false, // Отключаем стандартную пагинацию
+            info: false, // Отключаем информацию о количестве записей
+        });
+
+        function createCustomPagination() {
+            const paginationContainer = $('#customPagination');
+            paginationContainer.empty();
+
+            const startPage = Math.max(currentPage - 2, 1); // динамический параметр
+            const endPage = Math.min(startPage + 3, totalPages); // динамический параметр
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = $(`<button class="btn page-link mx-1">${i}</button>`);
+                pageButton.click(function() {
+                    currentPage = i;
+                    offset = (currentPage - 1) * limit;
+                    fetchDataAndInitializeTable(offset, limit);
+                    createCustomPagination();
+                });
+
+                paginationContainer.append(pageButton);
+            }
+        }
+
+        function updateTable(data) {
+            table.clear().rows.add(data).draw(); 
+        }
+
+        function fetchDataAndInitializeTable(offset, limit) {
+            const headers = new Headers({
+                "X-Api": `Token e74474eb205e442aa0007f61a0e9c3b714002ad1`
+            });
+
+            const requestOptions = {
+                method: 'GET',
+                headers: headers,
+            };
+
+            fetch(`http://127.0.0.1:8000/api/incidents/?limit=${limit}&offset=${offset}`, requestOptions)
+                .then(response => response.json())
+                .then(responseData => {
+                    data = responseData.results;
+                    console.log('responseData: ', responseData);
+                    totalPages = Math.ceil(responseData.count / limit);
+                    createCustomPagination();
+                    updateTable(data);
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                });
+        }
+
+        fetchDataAndInitializeTable(offset, limit);
+    });
+
+</script>
+</html> 

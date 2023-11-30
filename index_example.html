@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- Подключение стилей DataTables и Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="./styles.css" rel="stylesheet" type="text/css"></link>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Пример DataTables</h1>
+        <table id="dataTable" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Возраст</th>
+                    <th>Город</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Здесь будут данные -->
+            </tbody>
+        </table>
+        <div id="customPagination" class="text-center my-3">
+            <!-- Кастомные элементы пагинации будут здесь -->
+        </div>
+    </div>
+</body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap4.min.js"></script>
+<script>
+
+    $(document).ready(function() {
+        const perPage = 15; // Количество записей на странице
+        let currentPage = 1; // Текущая активная страница
+        let data = []; // Данные для таблицы
+        let totalPages = 0; // Общее количество страниц
+
+        const table = $('#dataTable').DataTable({
+            columns: [
+                { data: 'userId' },
+                { data: 'id' },
+                { data: 'title' },
+                { data: 'completed' }
+            ],
+            lengthChange: false,
+            pageLength: perPage,
+            paging: false // Отключаем стандартную пагинацию
+        });
+
+        function createCustomPagination() {
+            const paginationContainer = $('#customPagination');
+            paginationContainer.empty();
+
+            const startPage = Math.max(currentPage - 2, 1);
+            const endPage = Math.min(startPage + 3, totalPages);
+
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = $(`<button class="btn btn-link">${i}</button>`);
+                pageButton.click(function() {
+                    currentPage = i;
+                    const offset = (currentPage - 1) * perPage;
+                    fetchDataAndInitializeTable(offset, perPage);
+                    createCustomPagination();
+                });
+
+                paginationContainer.append(pageButton);
+            }
+        }
+
+        function updateTable() {
+            const start = (currentPage - 1) * perPage;
+            const pageData = data.slice(start, start + perPage);
+            table.clear().rows.add(pageData).draw();
+        }
+
+        function fetchDataAndInitializeTable(offset, limit) {
+            const url = `https://jsonplaceholder.typicode.com/todos?_start=${offset}&_limit=${limit}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(responseData => {
+                    data = responseData;
+                    totalPages = Math.ceil(data.length / perPage);
+                    createCustomPagination();
+                    updateTable();
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                });
+        }
+
+        fetchDataAndInitializeTable(0, perPage); 
+    });
+
+</script>
+</html>
